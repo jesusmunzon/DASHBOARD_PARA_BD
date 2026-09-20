@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Suite - Dashboard Interactivo con Asistente IA Conversacional</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js para visualizaciones dinámicas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f3ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.03);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.03);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+        }
+        /* Tab Transitions */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+        /* AI Pulse & Shimmer Effects */
+        @keyframes aiGlow {
+            0%, 100% { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 15px rgba(99, 102, 241, 0.15); }
+            50% { border-color: rgba(168, 85, 247, 0.6); box-shadow: 0 0 25px rgba(168, 85, 247, 0.3); }
+        }
+        .ai-card-glow {
+            animation: aiGlow 4s infinite ease-in-out;
+        }
+
+        /* PRINT MEDIA QUERIES FOR PERFECT A4 PDF PRINTING */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+            main { padding: 0 !important; max-width: 100% !important; }
+            .card-print {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                padding: 1.5rem !important;
+                margin: 0 !important;
+                width: 100% !important;
+                page-break-after: always;
+            }
+            .print-break-inside-avoid {
+                page-break-inside: avoid;
+            }
+            canvas {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans h-full antialiased flex flex-col md:flex-row overflow-x-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- NAVEGACIÓN LATERAL (SIDEBAR) -->
+    <aside id="sidebar" class="no-print w-full md:w-72 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col shrink-0 z-30 transition-all duration-300">
+        <!-- Logo Header Con Selector de Imagen -->
+        <div class="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center space-x-3">
+                <!-- Botón Interactivo para Cambiar Logo -->
+                <button id="logoUploadBtn" type="button" class="relative group focus:outline-none" title="Haz clic para cambiar el logo de la empresa">
+                    <div id="logoContainer" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 overflow-hidden ring-2 ring-transparent group-hover:ring-brand-500 transition">
+                        <i data-lucide="line-chart" id="logoIcon" class="w-6 h-6"></i>
+                        <img id="logoImg" class="w-full h-full object-cover hidden" alt="Logo de la empresa">
+                    </div>
+                    <span class="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 p-1 rounded-full shadow-md border border-slate-200 dark:border-slate-700 opacity-90 sm:opacity-0 group-hover:opacity-100 transition duration-200">
+                        <i data-lucide="camera" class="w-2.5 h-2.5"></i>
+                    </span>
+                </button>
+                <input type="file" id="logoInput" accept="image/*" class="hidden">
+
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-tight text-slate-900 dark:text-white">NexusSuite</h1>
+                    <span class="text-xs text-brand-600 dark:text-brand-400 font-medium tracking-wide uppercase">Enterprise v3.0 AI</span>
+                </div>
+            </div>
+            <button id="mobileMenuToggle" class="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+            <div class="px-3 pb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Menú Principal</div>
+
+            <a href="#resumen" data-tab="resumen" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-white transition-all group active">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors"></i>
+                <span class="text-sm">Resumen Ejecutivo</span>
+            </a>
+
+            <a href="#datos" data-tab="datos" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-white transition-all group">
+                <i data-lucide="database" class="w-6 h-6 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors"></i>
+                <span class="text-sm">Gestión de Datos</span>
+                <span class="ml-auto bg-brand-50 dark:bg-brand-900/50 text-brand-600 dark:text-brand-300 text-xs px-2 py-0.5 rounded-full font-semibold">En Vivo</span>
+            </a>
+
+            <a href="#informe" data-tab="informe" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-white transition-all group">
+                <i data-lucide="sparkles" class="w-6 h-6 text-amber-500 animate-pulse"></i>
+                <span class="text-sm font-semibold">Informe IA Exec</span>
+                <span class="ml-auto bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-full font-bold">Prompt IA</span>
+            </a>
+
+            <a href="#simulador" data-tab="simulador" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-white transition-all group">
+                <i data-lucide="trending-up" class="w-6 h-6 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors"></i>
+                <span class="text-sm">Pronóstico & Simulador</span>
+            </a>
+
+            <div class="pt-6 px-3 pb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ajustes & Sistema</div>
+
+            <a href="#config" data-tab="config" class="nav-item flex items-center space-x-3.5 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-brand-600 dark:hover:text-white transition-all group">
+                <i data-lucide="sliders" class="w-6 h-6 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors"></i>
+                <span class="text-sm">Configuración</span>
+            </a>
+        </nav>
+
+        <!-- User Profile Footer Card -->
+        <div class="p-4 m-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-9 h-9 rounded-full object-cover">
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
+                </div>
+                <div class="truncate">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-white truncate">Elena Rostova</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Director Financiero</p>
+                </div>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-lg text-slate-500 hover:bg-white dark:hover:bg-slate-700 shadow-sm transition" title="Cambiar tema">
+                <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-full min-w-0 overflow-y-auto">
+        <!-- TOP HEADER BAR -->
+        <header class="no-print bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <h2 id="pageTitle" class="text-xl font-bold text-slate-900 dark:text-white">Resumen Ejecutivo</h2>
+                <span class="hidden sm:inline-block px-2.5 py-1 text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                    Sistema Operativo
+                </span>
+            </div>
+
+            <!-- Header Quick Actions & Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- Select de Período -->
+                <div class="relative">
+                    <select id="periodSelect" class="bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 pr-8 border-0 focus:ring-2 focus:ring-brand-500 cursor-pointer">
+                        <option value="year">Año Actual (2026)</option>
+                        <option value="q4">Último Trimestre (Q4)</option>
+                        <option value="month">Este Mes</option>
+                    </select>
+                </div>
+
+                <!-- Botón de Acción Principal -->
+                <button id="openNewModalBtn" class="flex items-center space-x-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-brand-500/20 hover:shadow-brand-500/30 transition">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Nuevo Registro</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- TAB CONTENTS CONTAINER -->
+        <main class="p-6 space-y-6 max-w-7xl w-full mx-auto">
+
+            <!-- PESTAÑA 1: RESUMEN EJECUTIVO (PANTALLA PRINCIPAL) -->
+            <section id="tab-resumen" class="tab-content active space-y-6">
+
+                <!-- BARRA DE FILTROS Y CONTROLES ELEGANTES -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="filter" class="w-4 h-4 text-brand-500"></i> Filtros:
+                        </span>
+
+                        <div class="relative flex-1 sm:flex-initial min-w-[140px]">
+                            <select id="filterRegion" class="w-full bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300 font-medium rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-brand-500">
+                                <option value="all">Todas las Regiones</option>
+                                <option value="Norteamérica">Norteamérica</option>
+                                <option value="Europa">Europa</option>
+                                <option value="Latam">Latinoamérica</option>
+                                <option value="Asia">Asia-Pacífico</option>
+                            </select>
+                        </div>
+
+                        <div class="relative flex-1 sm:flex-initial min-w-[140px]">
+                            <select id="filterCategory" class="w-full bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300 font-medium rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-brand-500">
+                                <option value="all">Todas las Categorías</option>
+                                <option value="SaaS Subscriptions">SaaS Subscriptions</option>
+                                <option value="Consulting">Consultoría</option>
+                                <option value="Enterprise Licenses">Licencias Enterprise</option>
+                            </select>
+                        </div>
+
+                        <!-- Moneda Switcher -->
+                        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                            <button data-currency="EUR" class="currency-btn text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-brand-600 dark:text-white shadow-sm transition">€ EUR</button>
+                            <button data-currency="USD" class="currency-btn text-xs font-semibold px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">$ USD</button>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-400 font-medium">
+                        Última sincronización: <span class="text-slate-600 dark:text-slate-300 font-semibold" id="lastSyncTime">Hoy, 12:45 PM</span>
+                    </div>
+                </div>
+
+                <!-- CARDS DE METRICAS PRINCIPALES (KPIS) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ingresos Brutos</span>
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpiRevenue">€482,900</h3>
+                            <span class="flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 mr-0.5"></i> +14.2%
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">vs. período anterior (€422,800)</p>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div class="bg-indigo-600 h-full rounded-full" style="width: 82%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Beneficio Neto</span>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpiProfit">€164,350</h3>
+                            <span class="flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 mr-0.5"></i> +8.7%
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Margen operativo actual: <span class="font-semibold text-slate-700 dark:text-slate-300" id="kpiProfitMargin">34.0%</span></p>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div class="bg-emerald-500 h-full rounded-full" style="width: 68%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nuevos Clientes</span>
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpiClients">1,248</h3>
+                            <span class="flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 mr-0.5"></i> +21.5%
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Tasa de retención: <span class="font-semibold text-slate-700 dark:text-slate-300">94.8%</span></p>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div class="bg-blue-500 h-full rounded-full" style="width: 92%"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-200/80 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Valor Medio (ARPU)</span>
+                            <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <i data-lucide="receipt" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline justify-between">
+                            <h3 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight" id="kpiAvgTicket">€387</h3>
+                            <span class="flex items-center text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-md">
+                                <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 mr-0.5"></i> -1.4%
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Objetivo trimestral: €400</p>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                            <div class="bg-purple-500 h-full rounded-full" style="width: 76%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN GRÁFICOS PRINCIPALES -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Gráfico Principal: Evolución Ventas vs Gastos -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white">Rendimiento Financiero Mensual</h3>
+                                <p class="text-xs text-slate-500">Comparativa histórica entre Ingresos, Gastos y Presupuesto</p>
+                            </div>
+                            <div class="flex items-center space-x-2 text-xs">
+                                <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-brand-600 mr-1.5"></span> Ventas</span>
+                                <span class="flex items-center"><span class="w-3 h-3 rounded-full bg-rose-500 mr-1.5"></span> Gastos</span>
+                            </div>
+                        </div>
+                        <div class="h-72 w-full">
+                            <canvas id="salesTrendsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico Donut: Distribución por Línea de Negocio -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white">Canales de Ingreso</h3>
+                                <button class="text-slate-400 hover:text-slate-600"><i data-lucide="more-horizontal" class="w-5 h-5"></i></button>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Proporción por tipo de servicio</p>
+                            <div class="h-56 relative flex items-center justify-center">
+                                <canvas id="categoryDistributionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-center text-xs">
+                            <div class="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                <span class="text-slate-400 block mb-0.5">SaaS Core</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 text-sm">58.4%</span>
+                            </div>
+                            <div class="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                <span class="text-slate-400 block mb-0.5">Enterprise</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 text-sm">26.1%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN SECUNDARIA: REGIONES Y TOP PRODUCTOS -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">Rendimiento Geográfico</h3>
+                        <p class="text-xs text-slate-500 mb-6">Desglose de facturación por mercados clave</p>
+                        <div class="h-60">
+                            <canvas id="regionBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white">Cuentas Clave Recientes</h3>
+                                <a href="#datos" onclick="switchTab('datos')" class="text-xs font-semibold text-brand-600 hover:underline">Ver todas &rarr;</a>
+                            </div>
+                            <div class="space-y-3" id="quickAccountsList">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- PESTAÑA 2: GESTIÓN DE DATOS (BASE DE DATOS EN VIVO) -->
+            <section id="tab-datos" class="tab-content space-y-6">
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Base de Datos de Transacciones</h3>
+                        <p class="text-xs text-slate-500">Añade, edita o modifica registros para alimentar automáticamente el generador del Informe IA y las métricas directivas.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                            <input type="text" id="tableSearch" placeholder="Buscar registros..." class="pl-9 pr-4 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 w-48 sm:w-64">
+                        </div>
+                        <button id="addTransactionBtn" class="flex items-center space-x-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Agregar Registro</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-Pestañas de la Base de Datos -->
+                <div class="border-b border-slate-200 dark:border-slate-800 flex space-x-6 text-sm font-semibold">
+                    <button class="db-subtab active border-b-2 border-brand-600 pb-3 text-brand-600 dark:text-brand-400" data-subtab="ventas">Ingresos & Ventas</button>
+                    <button class="db-subtab border-b-2 border-transparent pb-3 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" data-subtab="gastos">Gastos Operativos</button>
+                </div>
+
+                <!-- Tabla Principal -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/50 text-[11px] uppercase font-semibold text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                                    <th class="p-4">ID / Cliente</th>
+                                    <th class="p-4">Categoría</th>
+                                    <th class="p-4">Región</th>
+                                    <th class="p-4">Monto</th>
+                                    <th class="p-4">Fecha</th>
+                                    <th class="p-4">Estado</th>
+                                    <th class="p-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                                <!-- Filas dinámicas insertadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Paginación -->
+                    <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                        <span>Mostrando <strong class="text-slate-700 dark:text-slate-300" id="showingCount">0</strong> registros</span>
+                        <div class="flex items-center space-x-1">
+                            <button class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Anterior</button>
+                            <button class="px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold">1</button>
+                            <button class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Siguiente</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- PESTAÑA 3: INFORME EJECUTIVO CON ASISTENTE IA DEDICADO Y PROMPTS LIBRES -->
+            <section id="tab-informe" class="tab-content space-y-6">
+
+                <!-- PANEL INTERACTIVO DE CONSULTA LIBRE A LA IA -->
+                <div class="no-print bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl border border-indigo-500/30 ai-card-glow relative overflow-hidden">
+                    
+                    <!-- Glow Decorativo -->
+                    <div class="absolute -right-10 -top-10 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="space-y-4 relative z-10">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 font-extrabold text-[10px] uppercase px-2.5 py-0.5 rounded-full shadow flex items-center gap-1">
+                                    <i data-lucide="bot" class="w-3.5 h-3.5 text-slate-950"></i> Asistente IA Conversacional
+                                </span>
+                                <span class="text-xs text-indigo-300 font-medium hidden sm:inline">Analizador Algorítmico de Tablas en Tiempo Real</span>
+                            </div>
+                            <span class="text-[11px] text-indigo-200/80 bg-indigo-900/50 px-2.5 py-1 rounded-lg border border-indigo-700/50">
+                                📊 Datos activos: <strong id="aiActiveRecordsCount" class="text-white">9 registros</strong>
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                                Generador Copilot de Informes Comparativos con Gráficos
+                            </h3>
+                            <p class="text-xs text-slate-300 leading-relaxed mt-1">
+                                Escribe lo que deseas preguntar o analizar (igual que lo harías en un chat). La IA examinará exhaustivamente todas las ventas y gastos de la base de datos para sintetizar un informe formal con gráficos, tablas de diagnóstico, KPIs y recomendaciones directivas.
+                            </p>
+                        </div>
+
+                        <!-- Chat/Prompt Input Area -->
+                        <div class="flex flex-col sm:flex-row items-stretch gap-2.5 pt-1">
+                            <div class="relative flex-1">
+                                <i data-lucide="message-square" class="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5"></i>
+                                <input type="text" id="aiCustomPrompt" placeholder="Ej: Hazme un informe comparativo entre ingresos de SaaS vs Consultoría y analiza el margen operativo por región..." class="w-full bg-slate-950/80 text-white text-xs rounded-xl pl-10 pr-4 py-3 border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 shadow-inner">
+                            </div>
+
+                            <button id="btnGenerateAIReport" onclick="runAIReportGenerator()" class="flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-bold px-6 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition hover:scale-[1.02] active:scale-95 shrink-0">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-slate-950"></i>
+                                <span>Generar Informe con IA</span>
+                            </button>
+                        </div>
+
+                        <!-- Sugerencias de Consultas Rápidas -->
+                        <div class="pt-2 flex flex-wrap items-center gap-2 text-xs">
+                            <span class="text-indigo-300 font-semibold text-[11px] flex items-center gap-1">
+                                <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i> Preguntas sugeridas:
+                            </span>
+                            <button onclick="setPromptAndRun('Hazme una comparativa detallada entre la evolución de SaaS Subscriptions frente a las licencias Enterprise, identificando fortalezas y riesgos.')" class="px-2.5 py-1 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 rounded-lg text-[11px] border border-indigo-700/50 transition text-left">
+                                📊 Comparativa SaaS vs Enterprise
+                            </button>
+                            <button onclick="setPromptAndRun('Analiza la distribución regional de ingresos y compara los márgenes netos de Europa y Latam con la estructura de costes actual.')" class="px-2.5 py-1 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 rounded-lg text-[11px] border border-indigo-700/50 transition text-left">
+                                🌍 Análisis Regional & Márgenes
+                            </button>
+                            <button onclick="setPromptAndRun('Audita los principales gastos operativos como servidores AWS y nóminas, y proponme un plan de optimización de costes a 90 días.')" class="px-2.5 py-1 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 rounded-lg text-[11px] border border-indigo-700/50 transition text-left">
+                                📉 Auditoría de Gastos & Eficiencia
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATUS BAR DE PROCESAMIENTO IA (Animado) -->
+                <div id="aiStatusToast" class="hidden no-print bg-indigo-50 dark:bg-slate-800/90 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3.5 text-xs text-indigo-900 dark:text-indigo-200 flex items-center justify-between transition-all">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span id="aiStatusText" class="font-semibold">La IA está leyendo y procesando los datos de las tablas...</span>
+                    </div>
+                    <span id="aiStepBadge" class="text-[10px] bg-indigo-200 dark:bg-indigo-950 px-2 py-0.5 rounded font-mono">Análisis Sintáctico</span>
+                </div>
+
+                <!-- CONTROLES DE IMPRESIÓN Y EXPORTACIÓN -->
+                <div class="no-print bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <i data-lucide="file-check-2" class="w-4 h-4 text-emerald-500"></i>
+                        <span>Documento Dinámico de Alta Dirección (Formato Imprimible / A4)</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="window.print()" class="flex items-center space-x-2 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:opacity-90 transition shadow-sm">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>Imprimir / Exportar a PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DOCUMENTO IMPRIMIBLE CON DISEÑO PROFESIONAL -->
+                <div id="printableReportArea" class="bg-white dark:bg-slate-900 p-8 sm:p-12 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-8 card-print text-slate-800 dark:text-slate-100">
+                    
+                    <!-- Cabecera del Informe Estilo Corporativo -->
+                    <div class="flex justify-between items-start border-b-2 border-slate-200 dark:border-slate-800 pb-6">
+                        <div>
+                            <div class="flex items-center space-x-2 text-brand-600 font-bold text-xl mb-1">
+                                <i data-lucide="building-2" class="w-6 h-6"></i>
+                                <span id="reportCompanyName">Nexus Corporate Solutions</span>
+                            </div>
+                            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight" id="reportHeaderTitle">INFORME EJECUTIVO COMPARATIVO DE PERFORMANCE</h1>
+                            <p class="text-xs text-slate-500 mt-1 font-medium" id="reportFiscalPeriod">Período Fiscal Auditable: Q3/Q4 - Año 2026</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-500 space-y-1">
+                            <p><strong class="text-slate-700 dark:text-slate-300">Respuesta a Prompt:</strong> Copilot IA Senior Analyst</p>
+                            <p><strong class="text-slate-700 dark:text-slate-300">Fecha de Emisión:</strong> <span id="reportDate">20 Septiembre 2026</span></p>
+                            <p><span class="inline-block px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold rounded">ESTADO: AUDITADO EN VIVO</span></p>
+                        </div>
+                    </div>
+
+                    <!-- MUESTRA DE LA INSTRUCCIÓN O CONSULTA PROCESADA -->
+                    <div class="bg-slate-100 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="message-square-quote" class="w-4 h-4 text-brand-500 shrink-0"></i>
+                            <span><strong>Consulta / Enfoque analizado:</strong> "<span id="reportUserPromptDisplay" class="italic text-slate-800 dark:text-slate-100">Análisis comparativo integral del rendimiento financiero y márgenes</span>"</span>
+                        </div>
+                        <span class="text-[10px] bg-white dark:bg-slate-900 font-mono px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0 hidden sm:inline-block">AI Engine v3.0</span>
+                    </div>
+
+                    <!-- RECUADRO INSIGHTS IA / RESUMEN EJECUTIVO -->
+                    <div class="bg-indigo-50/70 dark:bg-slate-800/50 p-6 rounded-2xl border border-indigo-100 dark:border-slate-700 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> Síntesis Ejecutiva & Diagnóstico Dinámico IA
+                            </h4>
+                            <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-slate-700">Calculado sobre base de datos en vivo</span>
+                        </div>
+                        <p class="text-xs leading-relaxed text-slate-700 dark:text-slate-300" id="aiExecutiveSummaryText">
+                            Evaluando la base de transacciones actual, se constata un volumen total de facturación de <strong id="aiSummaryRev">€482,900</strong> frente a un gasto de <strong id="aiSummaryExp">€111,700</strong>, generando un beneficio neto de <strong id="aiSummaryProfit">€371,200</strong> y un margen operativo del <strong id="aiSummaryMargin">76.9%</strong>. El análisis comparativo refleja un liderazgo marcado de la categoría <strong>SaaS Subscriptions</strong>, seguida por <strong>Enterprise Licenses</strong>.
+                        </p>
+                    </div>
+
+                    <!-- GRID DE KPIS OFICIALES -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center print-break-inside-avoid">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Ingresos Totales</span>
+                            <span class="text-xl font-black text-slate-900 dark:text-white" id="reportKPIRev">€482,900</span>
+                            <span class="text-[10px] text-emerald-600 font-bold block mt-1">↑ +14.2% YoY</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Beneficio Neto</span>
+                            <span class="text-xl font-black text-emerald-600 dark:text-emerald-400" id="reportKPIProfit">€371,200</span>
+                            <span class="text-[10px] text-slate-500 block mt-1" id="reportKPIMarginLabel">Margen: 76.9%</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">ARPU Promedio</span>
+                            <span class="text-xl font-black text-indigo-600 dark:text-indigo-400" id="reportKPIAvgTicket">€387</span>
+                            <span class="text-[10px] text-slate-500 block mt-1">Objetivo: €400</span>
+                        </div>
+                        <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Retención Clientes</span>
+                            <span class="text-xl font-black text-slate-900 dark:text-white">94.8%</span>
+                            <span class="text-[10px] text-emerald-600 font-bold block mt-1">↑ +2.1% Churn Red.</span>
+                        </div>
+                    </div>
+
+                    <!-- GRÁFICOS INTEGRADOS EN EL INFORME IMPRESO -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 print-break-inside-avoid">
+                        <div class="p-4 bg-white dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5" id="reportChart1Title">
+                                <i data-lucide="pie-chart" class="w-4 h-4 text-brand-600"></i> Distribución de Ingresos por Categoría
+                            </h4>
+                            <p class="text-[11px] text-slate-500 mb-3" id="reportChart1Sub">Proporción generada a partir de los datos activos</p>
+                            <div class="h-48 relative">
+                                <canvas id="reportChartCategory"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-white dark:bg-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5" id="reportChart2Title">
+                                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> Comparativa Trimensual de Márgenes
+                            </h4>
+                            <p class="text-[11px] text-slate-500 mb-3" id="reportChart2Sub">Tendencia histórica de eficiencia operativa</p>
+                            <div class="h-48 relative">
+                                <canvas id="reportChartTrends"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DETALLADA DE DIAGNÓSTICO IA Y MATRIZ ESTRATÉGICA -->
+                    <div class="space-y-4 print-break-inside-avoid">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
+                            <span>Análisis Cualitativo: Fortalezas vs Puntos Críticos</span>
+                            <span class="text-[11px] font-normal text-slate-400">Generado en respuesta al prompt</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 space-y-1.5">
+                                <span class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4"></i> Factores Clave & Fortalezas Identificadas
+                                </span>
+                                <ul class="list-disc list-inside text-slate-600 dark:text-slate-300 space-y-1 pl-1" id="aiGrowthPoints">
+                                    <li>Gran tracción en la categoría SaaS Subscriptions con alta recurrencia de facturación.</li>
+                                    <li>Baja tasa de cancelación (churn) mantenida por debajo del 5.2%.</li>
+                                    <li>Margen neto consolidado sustancialmente elevado frente a la estructura de costes fija.</li>
+                                </ul>
+                            </div>
+
+                            <div class="p-4 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200/60 dark:border-amber-800/40 space-y-1.5">
+                                <span class="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Riesgos & Áreas de Atención Prioritaria
+                                </span>
+                                <ul class="list-disc list-inside text-slate-600 dark:text-slate-300 space-y-1 pl-1" id="aiRiskPoints">
+                                    <li>Concentración relevante de costes en la partida de Personal/Nóminas.</li>
+                                    <li>Oportunidad de acelerar los cobros pendientes en contratos de Consultoría.</li>
+                                    <li>Necesidad de diversificación en geografías secundarias como Asia y Latinoamérica.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PLAN DE ACCIÓN Y RECOMENDACIONES TÁCTICAS DE LA IA -->
+                    <div class="space-y-3 print-break-inside-avoid">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
+                            Recomendaciones Directivas Tácticas (Roadmap de Acción)
+                        </h4>
+                        <div class="space-y-2 text-xs" id="aiRoadmapContainer">
+                            <!-- Items de recomendación renderizados dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- NOTAS EDITABLES DEL ANALISTA FINANCIERO -->
+                    <div class="space-y-2 pt-2">
+                        <label class="block text-xs font-bold text-slate-900 dark:text-white">Observaciones Finales del Comité Ejecutivo / Modificaciones Manuales:</label>
+                        <textarea class="w-full p-3 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-brand-500" rows="2" placeholder="Agregue comentarios adicionales o decisiones adoptadas antes de guardar o imprimir este documento..."></textarea>
+                    </div>
+
+                    <!-- FIRMAS OFICIALES IMPRIMIBLES -->
+                    <div class="pt-8 grid grid-cols-2 gap-12 text-center text-xs text-slate-500 print-break-inside-avoid">
+                        <div class="border-t border-slate-400 dark:border-slate-700 pt-3">
+                            <p class="font-bold text-slate-900 dark:text-slate-100">Elena Rostova</p>
+                            <p class="text-[11px] text-slate-500">Chief Financial Officer (CFO)</p>
+                        </div>
+                        <div class="border-t border-slate-400 dark:border-slate-700 pt-3">
+                            <p class="font-bold text-slate-900 dark:text-slate-100">Marc V. Vance</p>
+                            <p class="text-[11px] text-slate-500">Chief Executive Officer (CEO)</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- PESTAÑA 4: PRONÓSTICO & SIMULADOR WHAT-IF -->
+            <section id="tab-simulador" class="tab-content space-y-6">
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Simulador de Crecimiento & Proyecciones "What-If"</h3>
+                    <p class="text-xs text-slate-500">Ajusta las variables operativas para simular el impacto estimado en el beneficio anual.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-6">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brand-500"></i> Variables de Crecimiento
+                        </h4>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">Variación de Precios (+/-)</span>
+                                <span id="priceVal" class="font-bold text-brand-600">+5%</span>
+                            </div>
+                            <input type="range" id="sliderPrice" min="-20" max="30" value="5" class="w-full accent-brand-600">
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">Inversión en Marketing</span>
+                                <span id="mktVal" class="font-bold text-brand-600">+15%</span>
+                            </div>
+                            <input type="range" id="sliderMkt" min="0" max="100" value="15" class="w-full accent-brand-600">
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">Tasa de Retención</span>
+                                <span id="retVal" class="font-bold text-brand-600">92%</span>
+                            </div>
+                            <input type="range" id="sliderRet" min="70" max="99" value="92" class="w-full accent-brand-600">
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Proyección Estimada a 12 Meses</h4>
+                                <div class="text-right">
+                                    <span class="text-xs text-slate-400 block">Ingreso Estimado</span>
+                                    <span class="text-xl font-extrabold text-brand-600" id="simulatedTotal">€642,800</span>
+                                </div>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="forecastChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- PESTAÑA 5: CONFIGURACIÓN -->
+            <section id="tab-config" class="tab-content space-y-6">
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ajustes & Personalización de Plataforma</h3>
+                    <p class="text-xs text-slate-500">Configura los datos del dominio, tasa de impuestos y preferencias globales.</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 max-w-2xl space-y-6">
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">Información de Marca</h4>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nombre de la Empresa</label>
+                                <input type="text" id="configCompanyName" value="Nexus Corporate Solutions" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Moneda Base por Defecto</label>
+                                <select class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <option value="EUR">Euros (€)</option>
+                                    <option value="USD">Dólares ($)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tasa Impositiva (%)</label>
+                            <input type="number" value="21" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold px-4 py-2.5 rounded-xl">Restablecer Datos</button>
+                        <button onclick="saveConfig()" class="bg-brand-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-brand-700 transition">Guardar Cambios</button>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL NUEVO / EDITAR REGISTRO -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 transform scale-95 transition-transform duration-200" id="modalCard">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white" id="modalTitle">Añadir Nueva Transacción</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="addRecordForm" class="space-y-4">
+                <input type="hidden" id="formEditingId" value="">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nombre / Cliente</label>
+                    <input type="text" id="formClient" required class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Monto (€)</label>
+                        <input type="number" id="formAmount" required step="10" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Tipo</label>
+                        <select id="formType" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="ventas">Ingreso / Venta</option>
+                            <option value="gastos">Gasto Operativo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Categoría</label>
+                        <select id="formCategory" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 outline-none">
+                            <option value="SaaS Subscriptions">SaaS Subscriptions</option>
+                            <option value="Consulting">Consultoría</option>
+                            <option value="Enterprise Licenses">Enterprise</option>
+                            <option value="Infraestructura">Infraestructura</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Marketing">Marketing</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Región</label>
+                        <select id="formRegion" class="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 outline-none">
+                            <option value="Europa">Europa</option>
+                            <option value="Norteamérica">Norteamérica</option>
+                            <option value="Latam">Latinoamérica</option>
+                            <option value="Asia">Asia</option>
+                            <option value="Global">Global</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" id="cancelModalBtn" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-md">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT & LOGICA IA ANALÍTICA EN VIVO -->
+    <script>
+        // ESTADO GLOBAL CON BASE DE DATOS MODIFICABLE
+        const state = {
+            currency: 'EUR',
+            currencySymbol: '€',
+            exchangeRate: 1.08,
+            activeTab: 'resumen',
+            activeDbSubtab: 'ventas',
+            salesData: [
+                { id: 'TRX-901', client: 'Acme Corp', category: 'Enterprise Licenses', region: 'Norteamérica', amount: 45000, date: '2026-09-18', status: 'Completado' },
+                { id: 'TRX-902', client: 'TechFlow Europe', category: 'SaaS Subscriptions', region: 'Europa', amount: 12400, date: '2026-09-17', status: 'Completado' },
+                { id: 'TRX-903', client: 'Banco Latam', category: 'Consulting', region: 'Latam', amount: 28500, date: '2026-09-15', status: 'Pendiente' },
+                { id: 'TRX-904', client: 'Tokyo Dynamics', category: 'SaaS Subscriptions', region: 'Asia', amount: 18900, date: '2026-09-12', status: 'Completado' },
+                { id: 'TRX-905', client: 'Lumiere Retail', category: 'Enterprise Licenses', region: 'Europa', amount: 32000, date: '2026-09-10', status: 'Completado' },
+                { id: 'TRX-906', client: 'Apex Global', category: 'SaaS Subscriptions', region: 'Norteamérica', amount: 9500, date: '2026-09-08', status: 'Completado' },
+            ],
+            expensesData: [
+                { id: 'EXP-101', client: 'Servidores AWS Cloud', category: 'Infraestructura', region: 'Global', amount: 14200, date: '2026-09-15', status: 'Pagado' },
+                { id: 'EXP-102', client: 'Nómina Equipo Dev', category: 'Personal', region: 'Europa', amount: 85000, date: '2026-09-01', status: 'Pagado' },
+                { id: 'EXP-103', client: 'Campaña Google Ads', category: 'Marketing', region: 'Norteamérica', amount: 12500, date: '2026-09-10', status: 'Pagado' },
+            ]
+        };
+
+        let charts = {};
+
+        window.onload = function() {
+            lucide.createIcons();
+            initTabs();
+            initThemeToggle();
+            initLogoUploader();
+            initCharts();
+            renderTable();
+            renderQuickAccounts();
+            updateCalculations();
+            initSimulator();
+            initModal();
+            initReportCharts();
+            
+            // Permite presionar Enter en el prompt
+            const promptInput = document.getElementById('aiCustomPrompt');
+            if(promptInput) {
+                promptInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        runAIReportGenerator();
+                    }
+                });
+            }
+
+            // Generar informe inicial
+            executeAIAnalysis("Análisis comparativo integral de ingresos, gastos y margen operativo con recomendaciones estratégicas");
+        };
+
+        // GESTIÓN DE LOGO DE EMPRESA
+        function initLogoUploader() {
+            const logoUploadBtn = document.getElementById('logoUploadBtn');
+            const logoInput = document.getElementById('logoInput');
+            const logoIcon = document.getElementById('logoIcon');
+            const logoImg = document.getElementById('logoImg');
+
+            if (logoUploadBtn && logoInput) {
+                logoUploadBtn.addEventListener('click', () => logoInput.click());
+                logoInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            logoImg.src = evt.target.result;
+                            logoImg.classList.remove('hidden');
+                            if (logoIcon) logoIcon.classList.add('hidden');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-brand-50', 'dark:bg-slate-800', 'text-brand-600'));
+
+            const selectedContent = document.getElementById(`tab-${tabId}`);
+            if(selectedContent) selectedContent.classList.add('active');
+
+            const selectedNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if(selectedNav) selectedNav.classList.add('active');
+
+            const titles = {
+                resumen: 'Resumen Ejecutivo',
+                datos: 'Gestión de Datos',
+                informe: 'Informe Ejecutivo Asistido por IA',
+                simulador: 'Simulador de Pronósticos',
+                config: 'Configuración de Sistema'
+            };
+            document.getElementById('pageTitle').textContent = titles[tabId] || 'Dashboard';
+        }
+
+        function initTabs() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tab = item.getAttribute('data-tab');
+                    switchTab(tab);
+                });
+            });
+
+            document.querySelectorAll('.db-subtab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.db-subtab').forEach(b => {
+                        b.classList.remove('active', 'border-brand-600', 'text-brand-600', 'dark:text-brand-400');
+                        b.classList.add('border-transparent', 'text-slate-500');
+                    });
+                    btn.classList.add('active', 'border-brand-600', 'text-brand-600', 'dark:text-brand-400');
+                    btn.classList.remove('border-transparent', 'text-slate-500');
+                    state.activeDbSubtab = btn.getAttribute('data-subtab');
+                    renderTable();
+                });
+            });
+
+            document.querySelectorAll('.currency-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.currency-btn').forEach(b => {
+                        b.classList.remove('bg-white', 'dark:bg-slate-700', 'text-brand-600', 'dark:text-white', 'shadow-sm');
+                        b.classList.add('text-slate-500');
+                    });
+                    btn.classList.add('bg-white', 'dark:bg-slate-700', 'text-brand-600', 'dark:text-white', 'shadow-sm');
+                    btn.classList.remove('text-slate-500');
+                    
+                    state.currency = btn.getAttribute('data-currency');
+                    state.currencySymbol = state.currency === 'EUR' ? '€' : '$';
+                    updateCalculations();
+                    // Re-ejecutar análisis con la nueva moneda
+                    const currentPrompt = document.getElementById('reportUserPromptDisplay').textContent;
+                    executeAIAnalysis(currentPrompt);
+                });
+            });
+        }
+
+        function initThemeToggle() {
+            const toggle = document.getElementById('themeToggle');
+            toggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+        }
+
+        function initCharts() {
+            const gridColor = 'rgba(156, 163, 175, 0.1)';
+
+            const ctx1 = document.getElementById('salesTrendsChart').getContext('2d');
+            charts.salesTrend = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'],
+                    datasets: [
+                        {
+                            label: 'Ventas',
+                            data: [35000, 42000, 48000, 51000, 58000, 62000, 59000, 65000, 71000, 78000],
+                            backgroundColor: '#6366f1',
+                            borderRadius: 8,
+                        },
+                        {
+                            label: 'Gastos',
+                            data: [21000, 24000, 25000, 29000, 31000, 33000, 32000, 34000, 36000, 38000],
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 8,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: gridColor }, ticks: { callback: v => state.currencySymbol + v/1000 + 'k' } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('categoryDistributionChart').getContext('2d');
+            charts.category = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SaaS Core', 'Consultoría', 'Enterprise'],
+                    datasets: [{
+                        data: [58.4, 15.5, 26.1],
+                        backgroundColor: ['#6366f1', '#3b82f6', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '75%'
+                }
+            });
+
+            const ctx3 = document.getElementById('regionBarChart').getContext('2d');
+            charts.region = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['Europa', 'Norteamérica', 'Latam', 'Asia-Pacífico'],
+                    datasets: [{
+                        label: 'Facturación',
+                        data: [195000, 160000, 85000, 42900],
+                        backgroundColor: ['#4f46e5', '#818cf8', '#a5b4fc', '#c7d2fe'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: gridColor } }, y: { grid: { display: false } } }
+                }
+            });
+        }
+
+        // GRÁFICOS DINÁMICOS DEL INFORME IA
+        function initReportCharts() {
+            const ctxCat = document.getElementById('reportChartCategory').getContext('2d');
+            charts.reportCategory = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SaaS Subscriptions', 'Consultoría', 'Enterprise Licenses'],
+                    datasets: [{
+                        data: [50, 25, 25],
+                        backgroundColor: ['#4f46e5', '#0284c7', '#059669', '#f59e0b', '#ec4899']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                }
+            });
+
+            const ctxTrend = document.getElementById('reportChartTrends').getContext('2d');
+            charts.reportTrends = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4 (Est.)'],
+                    datasets: [{
+                        label: 'Rendimiento %',
+                        data: [28, 31, 34, 38],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { callback: v => v + '%' } }
+                    }
+                }
+            });
+        }
+
+        function updateCalculations() {
+            const mult = state.currency === 'USD' ? state.exchangeRate : 1;
+            const sym = state.currencySymbol;
+
+            const totalSales = state.salesData.reduce((acc, curr) => acc + curr.amount, 0) * mult;
+            const totalExpenses = state.expensesData.reduce((acc, curr) => acc + curr.amount, 0) * mult;
+            const netProfit = totalSales - totalExpenses;
+            const marginPct = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(1) : 0;
+            const avgTicket = totalSales / (state.salesData.length || 1);
+
+            document.getElementById('kpiRevenue').textContent = `${sym}${Math.round(totalSales).toLocaleString()}`;
+            document.getElementById('kpiProfit').textContent = `${sym}${Math.round(netProfit).toLocaleString()}`;
+            document.getElementById('kpiProfitMargin').textContent = `${marginPct}%`;
+            document.getElementById('kpiAvgTicket').textContent = `${sym}${Math.round(avgTicket).toLocaleString()}`;
+
+            const totalCount = state.salesData.length + state.expensesData.length;
+            const activeCountEl = document.getElementById('aiActiveRecordsCount');
+            if(activeCountEl) activeCountEl.textContent = `${totalCount} registros`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const data = state.activeDbSubtab === 'ventas' ? state.salesData : state.expensesData;
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition';
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-900 dark:text-white">${item.client} <span class="text-[10px] text-slate-400 block">${item.id}</span></td>
+                    <td class="p-4 text-slate-600 dark:text-slate-300">${item.category}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-300">${item.region}</td>
+                    <td class="p-4 font-bold text-slate-900 dark:text-white">${state.currencySymbol}${item.amount.toLocaleString()}</td>
+                    <td class="p-4 text-slate-500">${item.date}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right flex items-center justify-end space-x-1">
+                        <button onclick="editRecord('${item.id}')" class="text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Editar registro">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteRecord('${item.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Eliminar registro">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('showingCount').textContent = data.length;
+            lucide.createIcons();
+        }
+
+        function editRecord(id) {
+            let item = state.salesData.find(i => i.id === id);
+            let type = 'ventas';
+
+            if (!item) {
+                item = state.expensesData.find(i => i.id === id);
+                type = 'gastos';
+            }
+
+            if (!item) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Transacción (' + item.id + ')';
+            document.getElementById('formEditingId').value = item.id;
+            document.getElementById('formClient').value = item.client;
+            document.getElementById('formAmount').value = item.amount;
+            document.getElementById('formType').value = type;
+            document.getElementById('formCategory').value = item.category;
+            document.getElementById('formRegion').value = item.region;
+
+            openModal();
+        }
+
+        function deleteRecord(id) {
+            state.salesData = state.salesData.filter(i => i.id !== id);
+            state.expensesData = state.expensesData.filter(i => i.id !== id);
+            renderTable();
+            renderQuickAccounts();
+            updateCalculations();
+            
+            const prompt = document.getElementById('aiCustomPrompt').value || document.getElementById('reportUserPromptDisplay').textContent;
+            executeAIAnalysis(prompt);
+        }
+
+        function renderQuickAccounts() {
+            const container = document.getElementById('quickAccountsList');
+            container.innerHTML = '';
+            state.salesData.slice(0, 4).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40';
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-600 flex items-center justify-center font-bold text-xs">
+                            ${item.client.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-900 dark:text-white">${item.client}</p>
+                            <p class="text-[10px] text-slate-400">${item.category}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-extrabold text-slate-900 dark:text-white">${state.currencySymbol}${item.amount.toLocaleString()}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function initSimulator() {
+            const ctxSim = document.getElementById('forecastChart').getContext('2d');
+            const simChart = new Chart(ctxSim, {
+                type: 'line',
+                data: {
+                    labels: ['Mes 1', 'Mes 3', 'Mes 6', 'Mes 9', 'Mes 12'],
+                    datasets: [{
+                        label: 'Proyección Escenario',
+                        data: [40000, 120000, 280000, 450000, 642800],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const updateSim = () => {
+                const p = parseInt(document.getElementById('sliderPrice').value);
+                const m = parseInt(document.getElementById('sliderMkt').value);
+                const r = parseInt(document.getElementById('sliderRet').value);
+
+                document.getElementById('priceVal').textContent = (p >= 0 ? '+' : '') + p + '%';
+                document.getElementById('mktVal').textContent = '+' + m + '%';
+                document.getElementById('retVal').textContent = r + '%';
+
+                const base = 482900;
+                const factor = (1 + p/100) * (1 + m/200) * (r/90);
+                const calculated = Math.round(base * factor);
+
+                document.getElementById('simulatedTotal').textContent = state.currencySymbol + calculated.toLocaleString();
+                simChart.data.datasets[0].data = [
+                    Math.round(calculated * 0.1),
+                    Math.round(calculated * 0.3),
+                    Math.round(calculated * 0.55),
+                    Math.round(calculated * 0.8),
+                    calculated
+                ];
+                simChart.update();
+            };
+
+            ['sliderPrice', 'sliderMkt', 'sliderRet'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateSim);
+            });
+        }
+
+        // =========================================================
+        // MOTOR DE ANÁLISIS DE DATOS IA BASADO EN PROMPTS LIBRES
+        // =========================================================
+
+        function setPromptAndRun(promptText) {
+            const input = document.getElementById('aiCustomPrompt');
+            if(input) input.value = promptText;
+            runAIReportGenerator();
+        }
+
+        function runAIReportGenerator() {
+            const input = document.getElementById('aiCustomPrompt');
+            const userQuery = input && input.value.trim() ? input.value.trim() : "Análisis comparativo integral de rendimiento financiero, ingresos por categorías y control de gastos";
+
+            const toast = document.getElementById('aiStatusToast');
+            const toastText = document.getElementById('aiStatusText');
+            const badge = document.getElementById('aiStepBadge');
+            toast.classList.remove('hidden');
+
+            const totalRecords = state.salesData.length + state.expensesData.length;
+
+            const steps = [
+                { text: `Sintetizando ${totalRecords} transacciones activas de la base de datos...`, badge: "1/4 Lectura Tabla" },
+                { text: "Calculando desglose por regiones, líneas de negocio y partidas de gasto...", badge: "2/4 Agregación" },
+                { text: `Procesando consulta: "${userQuery.substring(0, 35)}..."`, badge: "3/4 Razonamiento" },
+                { text: "Estructurando gráficos dinámicos y hoja de ruta táctica...", badge: "4/4 Renderizado" }
+            ];
+
+            let stepIdx = 0;
+            const interval = setInterval(() => {
+                if(stepIdx < steps.length) {
+                    toastText.textContent = steps[stepIdx].text;
+                    badge.textContent = steps[stepIdx].badge;
+                    stepIdx++;
+                } else {
+                    clearInterval(interval);
+                    toast.classList.add('hidden');
+                    executeAIAnalysis(userQuery);
+                }
+            }, 250);
+        }
+
+        function executeAIAnalysis(promptText) {
+            const sym = state.currencySymbol;
+            const mult = state.currency === 'USD' ? state.exchangeRate : 1;
+
+            // 1. CÁLCULO DE DATOS REALES EN LA BASE DE DATOS
+            const sales = state.salesData;
+            const expenses = state.expensesData;
+
+            const totalSales = sales.reduce((a, b) => a + b.amount, 0) * mult;
+            const totalExpenses = expenses.reduce((a, b) => a + b.amount, 0) * mult;
+            const netProfit = totalSales - totalExpenses;
+            const marginPct = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(1) : "0.0";
+            const avgTicket = sales.length > 0 ? Math.round(totalSales / sales.length) : 0;
+
+            // Ventas por categoría
+            const catSales = {};
+            sales.forEach(s => {
+                catSales[s.category] = (catSales[s.category] || 0) + (s.amount * mult);
+            });
+
+            // Gastos por categoría
+            const expCat = {};
+            expenses.forEach(e => {
+                expCat[e.category] = (expCat[e.category] || 0) + (e.amount * mult);
+            });
+
+            // Ventas por región
+            const regSales = {};
+            sales.forEach(s => {
+                regSales[s.region] = (regSales[s.region] || 0) + (s.amount * mult);
+            });
+
+            // Ordenar categorías principales
+            const sortedCatSales = Object.entries(catSales).sort((a,b) => b[1] - a[1]);
+            const topCategory = sortedCatSales.length > 0 ? sortedCatSales[0][0] : "SaaS Subscriptions";
+            const topCategoryVal = sortedCatSales.length > 0 ? sortedCatSales[0][1] : 0;
+            const topCatPct = totalSales > 0 ? ((topCategoryVal / totalSales) * 100).toFixed(1) : 0;
+
+            // Ordenar regiones principales
+            const sortedRegSales = Object.entries(regSales).sort((a,b) => b[1] - a[1]);
+            const topRegion = sortedRegSales.length > 0 ? sortedRegSales[0][0] : "Europa";
+            const topRegionVal = sortedRegSales.length > 0 ? sortedRegSales[0][1] : 0;
+
+            // Actualizar vista del Prompt en el informe oficial
+            document.getElementById('reportUserPromptDisplay').textContent = promptText;
+
+            // Actualizar KPIs imprimibles
+            document.getElementById('reportKPIRev').textContent = `${sym}${Math.round(totalSales).toLocaleString()}`;
+            document.getElementById('reportKPIProfit').textContent = `${sym}${Math.round(netProfit).toLocaleString()}`;
+            document.getElementById('reportKPIMarginLabel').textContent = `Margen: ${marginPct}%`;
+            document.getElementById('reportKPIAvgTicket').textContent = `${sym}${avgTicket.toLocaleString()}`;
+
+            document.getElementById('aiSummaryRev').textContent = `${sym}${Math.round(totalSales).toLocaleString()}`;
+            document.getElementById('aiSummaryExp').textContent = `${sym}${Math.round(totalExpenses).toLocaleString()}`;
+            document.getElementById('aiSummaryProfit').textContent = `${sym}${Math.round(netProfit).toLocaleString()}`;
+            document.getElementById('aiSummaryMargin').textContent = `${marginPct}%`;
+
+            // 2. DETECCION DE PALABRAS CLAVE EN EL PROMPT DEL USUARIO
+            const q = promptText.toLowerCase();
+            const isCostFocus = q.includes('gasto') || q.includes('coste') || q.includes('eficiencia') || q.includes('ahorro') || q.includes('aws') || q.includes('personal');
+            const isGrowthFocus = q.includes('crecimiento') || q.includes('escal') || q.includes('saas') || q.includes('expansion') || q.includes('ventas');
+            const isRegionFocus = q.includes('region') || q.includes('europa') || q.includes('latam') || q.includes('asia') || q.includes('geograf');
+            const isRiskFocus = q.includes('riesgo') || q.includes('audit') || q.includes('liquidez') || q.includes('cobro');
+
+            // 3. GENERACIÓN DINÁMICA DE TEXTOS DE SÍNTESIS
+            let titleText = "INFORME EJECUTIVO COMPARATIVO DE PERFORMANCE";
+            let summaryHTML = "";
+            let growthPointsHTML = "";
+            let riskPointsHTML = "";
+            let roadmapHTML = "";
+
+            if (isCostFocus) {
+                titleText = "INFORME IA: AUDITORÍA Y COMPARATIVA DE COSTES OPERATIVOS";
+                summaryHTML = `
+                    Tras analizar los registros de la base de datos, el volumen total de gastos asciende a <strong class="text-rose-600">${sym}${Math.round(totalExpenses).toLocaleString()}</strong> frente a ingresos de <strong>${sym}${Math.round(totalSales).toLocaleString()}</strong>. La partida de mayor peso en la estructura de costes es <strong>${Object.keys(expCat)[0] || 'Personal'}</strong> (${sym}${Math.round(expCat[Object.keys(expCat)[0]] || 0).toLocaleString()}). Aunque el margen operativo neto se sitúa en un sólido <strong>${marginPct}%</strong>, existen oportunidades para consolidar partidas de infraestructura cloud y optimizar la rentabilidad global.
+                `;
+                growthPointsHTML = `
+                    <li>Excelente margen de maniobra bruto con beneficio neto positivo de ${sym}${Math.round(netProfit).toLocaleString()}.</li>
+                    <li>Eficiencia en costes de captación publicitaria respecto al retorno global de ventas.</li>
+                    <li>Sostenibilidad en el flujo de caja operativo sin depender de endeudamiento externo.</li>
+                `;
+                riskPointsHTML = `
+                    <li>Elevada proporción de costes fijos en ${Object.keys(expCat)[0] || 'Personal'} (${sym}${Math.round(expCat[Object.keys(expCat)[0]] || 0).toLocaleString()}).</li>
+                    <li>Variaciones imprevistas en consumos de infraestructura y licencias de terceros.</li>
+                    <li>Impacto potencial en márgenes si las ventas sufren desaceleración estacional.</li>
+                `;
+                roadmapHTML = `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">1. Re-negociación e Inserción de Instancias Reservadas (AWS/Cloud)</span>
+                            <p class="text-[11px] text-slate-500">Optimizar los servidores activos para reducir el gasto recurrente en un 15% mensual.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-rose-100 text-rose-700 font-bold rounded text-[10px]">Alta Prioridad</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">2. Control Presupuestario en Partidas de Marketing</span>
+                            <p class="text-[11px] text-slate-500">Establecer tope trimestral de inversión publicitarias con ROI mínimo exigido de 3.5x.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-brand-100 text-brand-700 font-bold rounded text-[10px]">Corto Plazo</span>
+                    </div>
+                `;
+            } else if (isRegionFocus) {
+                titleText = "INFORME IA: ANÁLISIS COMPARATIVO GEOGRÁFICO Y POR MERCADOS";
+                summaryHTML = `
+                    El desglose geográfico de la base de datos indica que <strong>${topRegion}</strong> es la región con mayor tracción comercial, generando <strong class="text-brand-600">${sym}${Math.round(topRegionVal).toLocaleString()}</strong> del total de ventas. La facturación acumulada es de <strong>${sym}${Math.round(totalSales).toLocaleString()}</strong> con un margen operativo global del <strong>${marginPct}%</strong>. Se observa un potencial relevante de escalabilidad en mercados emergentes como Latinoamérica y Asia-Pacífico.
+                `;
+                growthPointsHTML = `
+                    <li>Mercado principal (${topRegion}) consolidado con clientes de alto ticket promedio.</li>
+                    <li>Diversificación geográfica activa en ${Object.keys(regSales).length} regiones comerciales.</li>
+                    <li>Creciente interés por soluciones SaaS en mercados en expansión como Latam.</li>
+                `;
+                riskPointsHTML = `
+                    <li>Concentración del gasto en la región de origen respecto a los ingresos generados fuera.</li>
+                    <li>Riesgo de fluctuación del tipo de cambio en facturación contratada en dólares/divisas locales.</li>
+                    <li>Tiempos de cobro ligeramente superiores en operaciones internacionales.</li>
+                `;
+                roadmapHTML = `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">1. Plan de Expansión en Latinoamérica</span>
+                            <p class="text-[11px] text-slate-500">Reasignar fuerza de ventas para capturar la demanda creciente en Latam aprovechando el menor CAC.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded text-[10px]">Oportunidad</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">2. Cobertura de Tipo de Cambio Divisas (USD/EUR)</span>
+                            <p class="text-[11px] text-slate-500">Proteger el margen operativo ante la volatilidad en las cuentas contratadas en Norteamérica.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-700 font-bold rounded text-[10px]">Estratégico</span>
+                    </div>
+                `;
+            } else {
+                // General / Growth / Balanced Focus
+                titleText = "INFORME EJECUTIVO COMPARATIVO DE PERFORMANCE";
+                summaryHTML = `
+                    Basado en las ${sales.length} ventas y ${expenses.length} gastos registrados, la compañía suma un volumen de facturación bruta de <strong class="text-brand-600">${sym}${Math.round(totalSales).toLocaleString()}</strong> y un beneficio neto de <strong>${sym}${Math.round(netProfit).toLocaleString()}</strong> (Margen Operativo: <strong>${marginPct}%</strong>). La categoría estrella es <strong>${topCategory}</strong> representando el <strong>${topCatPct}%</strong> de los ingresos. La retención de clientes se mantiene en un nivel óptimo del <strong>94.8%</strong>.
+                `;
+                growthPointsHTML = `
+                    <li>Liderazgo en facturación recurrente liderada por la línea ${topCategory}.</li>
+                    <li>Sólido margen operativo neto del ${marginPct}% por encima del benchmark de la industria.</li>
+                    <li>Valor promedio por cuenta (ARPU) de ${sym}${avgTicket} con tendencia al alza.</li>
+                `;
+                riskPointsHTML = `
+                    <li>Concentración del ${topCatPct}% de la facturación en una sola categoría principal.</li>
+                    <li>Gasto operativo acumulado de ${sym}${Math.round(totalExpenses).toLocaleString()} que requiere supervisión en partidas de personal e infraestructura.</li>
+                    <li>Cuentas pendientes de cobro en área de consultoría comercial.</li>
+                `;
+                roadmapHTML = `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">1. Potenciar Venta Cruzada (Up-selling) en SaaS Core</span>
+                            <p class="text-[11px] text-slate-500">Ofrecer módulos de IA avanzada a la base existente para elevare el ARPU objetivo a ${sym}450.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-brand-100 text-brand-700 font-bold rounded text-[10px]">Prioridad 1</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white">2. Optimización Táctica de Eficiencia en Servidores</span>
+                            <p class="text-[11px] text-slate-500">Revisión de consumo cloud AWS para arañar +2 puntos porcentuales adicionales al beneficio neto.</p>
+                        </div>
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold rounded text-[10px]">Eficiencia</span>
+                    </div>
+                `;
+            }
+
+            // Inyectar contenido en la vista
+            document.getElementById('reportHeaderTitle').textContent = titleText;
+            document.getElementById('aiExecutiveSummaryText').innerHTML = summaryHTML;
+            document.getElementById('aiGrowthPoints').innerHTML = growthPointsHTML;
+            document.getElementById('aiRiskPoints').innerHTML = riskPointsHTML;
+            document.getElementById('aiRoadmapContainer').innerHTML = roadmapHTML;
+
+            // 4. ACTUALIZAR GRÁFICOS DEL INFORME SEGÚN LOS DATOS REALES
+            if (charts.reportCategory) {
+                const labels = Object.keys(catSales).length > 0 ? Object.keys(catSales) : ['SaaS', 'Consulting', 'Enterprise'];
+                const values = Object.keys(catSales).length > 0 ? Object.values(catSales) : [50, 25, 25];
+
+                charts.reportCategory.data.labels = labels;
+                charts.reportCategory.data.datasets[0].data = values;
+                charts.reportCategory.update();
+            }
+
+            if (charts.reportTrends) {
+                const currentMargin = parseFloat(marginPct);
+                charts.reportTrends.data.datasets[0].data = [
+                    Math.max(15, Math.round(currentMargin - 10)),
+                    Math.max(20, Math.round(currentMargin - 5)),
+                    Math.round(currentMargin),
+                    Math.round(currentMargin + 4)
+                ];
+                charts.reportTrends.update();
+            }
+        }
+
+        function updateReportVisuals() {
+            const currentPrompt = document.getElementById('reportUserPromptDisplay').textContent;
+            executeAIAnalysis(currentPrompt);
+        }
+
+        function saveConfig() {
+            const name = document.getElementById('configCompanyName').value;
+            if(name) {
+                document.getElementById('reportCompanyName').textContent = name;
+                alert('¡Configuración guardada con éxito!');
+            }
+        }
+
+        // FUNCIONES AUXILIARES DE MODAL
+        function openModal() {
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+            overlay.classList.add('opacity-0');
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                document.getElementById('addRecordForm').reset();
+                document.getElementById('formEditingId').value = '';
+                document.getElementById('modalTitle').textContent = 'Añadir Nueva Transacción';
+            }, 200);
+        }
+
+        function initModal() {
+            const openBtns = [document.getElementById('openNewModalBtn'), document.getElementById('addTransactionBtn')];
+            const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('cancelModalBtn')];
+
+            openBtns.forEach(btn => btn && btn.addEventListener('click', () => {
+                document.getElementById('addRecordForm').reset();
+                document.getElementById('formEditingId').value = '';
+                document.getElementById('modalTitle').textContent = 'Añadir Nueva Transacción';
+                openModal();
+            }));
+
+            closeBtns.forEach(btn => btn && btn.addEventListener('click', closeModal));
+
+            document.getElementById('addRecordForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const editingId = document.getElementById('formEditingId').value;
+                const type = document.getElementById('formType').value;
+
+                if (editingId) {
+                    let list = state.salesData.find(i => i.id === editingId) ? state.salesData : state.expensesData;
+                    
+                    const oldIndexInSales = state.salesData.findIndex(i => i.id === editingId);
+                    const oldIndexInExpenses = state.expensesData.findIndex(i => i.id === editingId);
+
+                    if (type === 'ventas' && oldIndexInExpenses !== -1) {
+                        const [item] = state.expensesData.splice(oldIndexInExpenses, 1);
+                        state.salesData.unshift(item);
+                        list = state.salesData;
+                    } else if (type === 'gastos' && oldIndexInSales !== -1) {
+                        const [item] = state.salesData.splice(oldIndexInSales, 1);
+                        state.expensesData.unshift(item);
+                        list = state.expensesData;
+                    }
+
+                    const target = list.find(i => i.id === editingId);
+                    if (target) {
+                        target.client = document.getElementById('formClient').value;
+                        target.category = document.getElementById('formCategory').value;
+                        target.region = document.getElementById('formRegion').value;
+                        target.amount = parseFloat(document.getElementById('formAmount').value);
+                    }
+                } else {
+                    const newRec = {
+                        id: (type === 'ventas' ? 'TRX-' : 'EXP-') + Math.floor(100 + Math.random() * 900),
+                        client: document.getElementById('formClient').value,
+                        category: document.getElementById('formCategory').value,
+                        region: document.getElementById('formRegion').value,
+                        amount: parseFloat(document.getElementById('formAmount').value),
+                        date: new Date().toISOString().split('T')[0],
+                        status: type === 'ventas' ? 'Completado' : 'Pagado'
+                    };
+
+                    if (type === 'ventas') {
+                        state.salesData.unshift(newRec);
+                    } else {
+                        state.expensesData.unshift(newRec);
+                    }
+                }
+
+                renderTable();
+                renderQuickAccounts();
+                updateCalculations();
+                
+                const prompt = document.getElementById('aiCustomPrompt').value || document.getElementById('reportUserPromptDisplay').textContent;
+                executeAIAnalysis(prompt);
+                closeModal();
+            });
+        }
+    </script>
+</body>
+</html>
